@@ -1,47 +1,64 @@
-import axios from 'axios';
+import axios from "axios";
 
-const api = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api',
-    headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-    },
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+
+const apiClient = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
 });
 
-// Interceptor Request: Sisipkan token jika ada
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers["Authorization"] = `Bearer ${token}`;
+  }
+  return config;
+});
 
-// Interceptor Response: Penanganan Error Global
-api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        const { response } = error;
-        
-        if (response) {
-            if (response.status === 401) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = '/login';
-            }
-            let errorMessage = response.data?.message || 'Terjadi kesalahan pada server';
-            
-            if (response.status === 422 && response.data.errors) {
-                const firstErrorKey = Object.keys(response.data.errors)[0];
-                errorMessage = response.data.errors[firstErrorKey][0];
-            }
-            return Promise.reject(new Error(errorMessage));
-        }
-        return Promise.reject(new Error('Gagal terhubung ke server. Periksa koneksi Anda.'));
+// Response Interceptor: Auto Logout 401
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      const isAuthRoute = error.config?.url === "/login" || error.config?.url === "/register";
+      
+      if (!isAuthRoute) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+      }
     }
+    return Promise.reject(error);
+  }
 );
 
-export default api;
+/**
+ * @param {string} path   contoh: "/login"
+ * @param {object} options {method, body}
+ */
+export async function apiRequest(path, { method = "GET", body } = {}) {
+  try {
+    const res = await apiClient.request({
+      url: path,
+      method,
+      data: body,
+    });
+    return res.data; 
+  } catch (err) {
+    const data = err.response?.data ?? null;
+    let errorMessage = data?.message || "Terjadi kesalahan pada server";
+
+    if (err.response?.status === 422 && data?.errors) {
+      const firstErrorKey = Object.keys(data.errors)[0];
+      errorMessage = data.errors[firstErrorKey][0];
+    }
+
+    const error = new Error(errorMessage);
+    error.status = err.response?.status;
+    error.data = data;
+    throw error;
+  }
+}
