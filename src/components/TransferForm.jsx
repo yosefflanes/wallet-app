@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Send, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { apiRequest } from "../utils/axios";
+import { formatNumber } from "../utils/format";
 
 export default function TransferForm({ onSuccess, currentBalance }) {
   const [target, setTarget] = useState("");
@@ -8,22 +9,43 @@ export default function TransferForm({ onSuccess, currentBalance }) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
 
+  // Fungsi untuk membersihkan error saat user mulai mengetik ulang di input Tujuan
+  const handleTargetChange = (e) => {
+    setTarget(e.target.value);
+    if (message.text) setMessage({ type: "", text: "" });
+  };
+
+  // Fungsi untuk memformat input angka mentah dan membersihkan error
+  const handleAmountChange = (e) => {
+    const rawValue = e.target.value.replace(/\D/g, "");
+    setAmount(rawValue);
+    if (message.text) setMessage({ type: "", text: "" });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage({ type: "", text: "" });
 
+    const cleanTarget = target.trim();
     const parsedAmount = parseInt(amount);
-    if (!target) {
-      return setMessage({ type: "error", text: "Tujuan tidak boleh kosong." });
+
+    if (!cleanTarget) {
+      setMessage({ type: "error", text: "Tujuan tidak boleh kosong." });
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+      return;
     }
     if (!parsedAmount || parsedAmount <= 0) {
-      return setMessage({
+      setMessage({
         type: "error",
         text: "Nominal transfer tidak valid.",
       });
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+      return;
     }
     if (parsedAmount > currentBalance) {
-      return setMessage({ type: "error", text: "Saldo tidak cukup." });
+      setMessage({ type: "error", text: "Saldo tidak cukup." });
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+      return;
     }
 
     setIsLoading(true);
@@ -31,15 +53,21 @@ export default function TransferForm({ onSuccess, currentBalance }) {
       const idempotencyKey = crypto.randomUUID();
       const res = await apiRequest("/transfer", {
         method: "POST",
-        body: { target, amount: parsedAmount, idempotency_key: idempotencyKey },
+        body: {
+          target: cleanTarget,
+          amount: parsedAmount,
+          idempotency_key: idempotencyKey,
+        },
       });
 
       setMessage({ type: "success", text: res.message });
       setTarget("");
       setAmount("");
       onSuccess();
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
     } catch (err) {
       setMessage({ type: "error", text: err.message });
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
     } finally {
       setIsLoading(false);
     }
@@ -60,9 +88,9 @@ export default function TransferForm({ onSuccess, currentBalance }) {
           }`}
         >
           {message.type === "error" ? (
-            <AlertCircle className="h-4 w-4 mt-0.5" />
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
           ) : (
-            <CheckCircle2 className="h-4 w-4 mt-0.5" />
+            <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
           )}
           <span>{message.text}</span>
         </div>
@@ -73,7 +101,7 @@ export default function TransferForm({ onSuccess, currentBalance }) {
           <input
             type="text"
             value={target}
-            onChange={(e) => setTarget(e.target.value)}
+            onChange={handleTargetChange}
             placeholder="Email atau No. HP Tujuan"
             disabled={isLoading}
             className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
@@ -81,10 +109,10 @@ export default function TransferForm({ onSuccess, currentBalance }) {
         </div>
         <div>
           <input
-            type="number"
-            min="1"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            type="text" // text agar titik ribuan bisa muncul
+            inputMode="numeric"
+            value={amount ? formatNumber(amount) : ""}
+            onChange={handleAmountChange}
             placeholder="Nominal Transfer"
             disabled={isLoading}
             className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
