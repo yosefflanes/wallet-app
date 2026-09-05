@@ -76,7 +76,7 @@ export default function TransferForm({ onSuccess, currentBalance }) {
   return (
     <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-lg">
       <h4 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-        <Send className="h-4 w-4 text-purple-400" /> Transfer Dana
+        <Send className="h-4 w-4 text-blue-600" /> Transfer Dana
       </h4>
 
       {message.text && (
@@ -104,7 +104,7 @@ export default function TransferForm({ onSuccess, currentBalance }) {
             onChange={handleTargetChange}
             placeholder="Email atau No. HP Tujuan"
             disabled={isLoading}
-            className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
+            className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
           />
         </div>
         <div>
@@ -115,13 +115,13 @@ export default function TransferForm({ onSuccess, currentBalance }) {
             onChange={handleAmountChange}
             placeholder="Nominal Transfer"
             disabled={isLoading}
-            className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
+            className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
           />
         </div>
         <button
           type="submit"
           disabled={isLoading || !target || !amount}
-          className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
