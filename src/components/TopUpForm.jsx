@@ -1,11 +1,18 @@
 import { useState } from "react";
 import { Plus, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { apiRequest } from "../utils/axios";
+import { formatNumber } from "../utils/format";
 
 export default function TopUpForm({ onSuccess }) {
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState({ type: "", text: "" }); // type: 'error' | 'success'
+  const [message, setMessage] = useState({ type: "", text: "" });
+
+  const handleAmountChange = (e) => {
+    const rawValue = e.target.value.replace(/\D/g, "");
+    setAmount(rawValue);
+    if (message.text) setMessage({ type: "", text: "" });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -14,6 +21,7 @@ export default function TopUpForm({ onSuccess }) {
     const parsedAmount = parseInt(amount);
     if (!parsedAmount || parsedAmount <= 0) {
       setMessage({ type: "error", text: "Nominal harus lebih dari 0." });
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
       return;
     }
 
@@ -26,8 +34,10 @@ export default function TopUpForm({ onSuccess }) {
       setMessage({ type: "success", text: res.message });
       setAmount("");
       onSuccess();
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
     } catch (err) {
       setMessage({ type: "error", text: err.message });
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
     } finally {
       setIsLoading(false);
     }
@@ -48,9 +58,9 @@ export default function TopUpForm({ onSuccess }) {
           }`}
         >
           {message.type === "error" ? (
-            <AlertCircle className="h-4 w-4 mt-0.5" />
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
           ) : (
-            <CheckCircle2 className="h-4 w-4 mt-0.5" />
+            <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
           )}
           <span>{message.text}</span>
         </div>
@@ -58,10 +68,10 @@ export default function TopUpForm({ onSuccess }) {
 
       <form onSubmit={handleSubmit} className="flex gap-2" noValidate>
         <input
-          type="number"
-          min="1"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          type="text" // text agar titik ribuan bisa muncul
+          inputMode="numeric"
+          value={amount ? formatNumber(amount) : ""}
+          onChange={handleAmountChange}
           placeholder="Nominal"
           disabled={isLoading}
           className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
